@@ -3,28 +3,49 @@ title: "esm-206-assignment-5-q2"
 author: "Kate"
 date: "November 29, 2018"
 output: html_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r packages & data}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Load necessary packages
 
-```{r cars}
-summary(cars)
+library(tidyverse)
+
+# Load necessary data
+
+fac_salary <- read_csv('Faculty salary data (2008 - 2009 survey).csv')
+enroll <- read_csv('Grad enrollment 1967 - 2015.csv')
+phd_salary <- read_csv('Median salary for doctoral recipients.csv')
+phds <- read_csv('PhDs by Field 1985 - 2015.csv')
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r reformat data}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Reformat phd_salary dataframe
+
+phd_salary_employment <- phd_salary %>% 
+  select(field, employment.male, employment.female) %>% 
+  rename(male = employment.male,
+         female = employment.female) %>% 
+  gather(key = sex, value = employment, 2:3)
+
+phd_salary_postdoc <- phd_salary %>% 
+  select(field, postdoc.male, postdoc.female) %>%
+  rename(male = postdoc.male,
+         female = postdoc.female) %>% 
+  gather(key = sex, value = postdoc, 2:3)
+
+phd_salary2 <- full_join(phd_salary_employment, phd_salary_postdoc,
+                         by = c('field', 'sex'))
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
