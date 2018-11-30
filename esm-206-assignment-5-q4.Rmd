@@ -1,0 +1,18 @@
+---
+title: "esm-206-assignment-5-q4"
+author: "Sean Denny"
+date: "11/29/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Question 4
+
+```{r load packages and data}
+library(tidyverse)
+prof_sal <- read_csv("Faculty salary data (2008-2009 survey).csv")
+```
+
