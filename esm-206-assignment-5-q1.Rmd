@@ -2,11 +2,267 @@
 title: "esm-206-assignment-5-q1"
 author: "Sean Denny"
 date: "11/29/2018"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-###1 Question 1
+### Q1: Male and female graduate enrollment (1967 - 2015)
+
+Compare trends in total graduate enrollment for males and females (including full-time/part-time and private/public universities) in the United States from 1967 - 2015. Describe your results statistically, graphically and in text.
+
+```{r packages & data, include=FALSE}
+
+# Load necessary packages
+
+library(tidyverse)
+library(stargazer)
+
+# Load necessary data
+
+enroll <- read_csv('Grad enrollment 1967 - 2015.csv',
+                   na = '---') # total postbaccalaureate fall enrollment in degree-granting postsecondary institutions, by attendance status, sex of student, and control of institution: 1967 through 2015
+
+```
+
+
+```{r reformatting dataframes, include=FALSE}
+
+# Dataframe for male vs. female, fulltime vs parttime enrollment
+enroll_full <- enroll %>% 
+  select(year, full_m, full_f) %>% 
+  rename(male = full_m,
+         female = full_f) %>% 
+  gather(key = sex, value = enrollment, 2:3) %>% 
+  mutate(status = 'fulltime')
+
+enroll_part <- enroll %>% 
+  select(year, part_m, part_f) %>% 
+  rename(male = part_m,
+         female = part_f) %>% 
+  gather(key = sex, value = enrollment, 2:3) %>% 
+  mutate(status = 'parttime')
+
+enrollment <- rbind(enroll_full, enroll_part) %>% 
+  select(year, sex, status, enrollment)
+
+# Dataframe for public vs. private enrollment
+enroll_public <- enroll %>%
+  select(year, public) %>% 
+  rename(enrollment = public) %>% 
+  mutate(sector = 'public',
+         type = NA)
+
+enroll_private <- enroll %>% 
+  select(year, nonprofit, forprofit) %>% 
+  gather(key = type, value = enrollment, 2:3) %>% 
+  mutate(sector = 'private')
+
+enroll_sector <- rbind(enroll_public, enroll_private) %>% 
+  select(year, sector, type, enrollment)
+
+```
+
+
+```{r scatter plots, echo=FALSE, warning=FALSE}
+
+# Scatter plot: totals
+total_scatter <- enrollment %>% 
+  group_by(year, sex) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  ggplot(aes(x = year, y = total)) +
+    geom_point(aes(color = sex)) +
+    theme_classic() +
+    labs(x = 'Year',
+         y = 'Enrollment (number of students)',
+         title = 'Total male vs. female enrollment (1967-2015)')
+
+total_scatter
+
+# Scatter plot: male vs female, fulltime vs parttime
+enroll_scatter <- ggplot(enrollment, aes(x = year, y = enrollment)) +
+  geom_point(aes(color = sex, shape = status)) +
+  scale_shape_manual(values = c(19, 1)) +
+  theme_classic() +
+  labs(x = 'Year',
+       y = 'Enrollment (number of students)',
+       title = 'Enrollment over time (1967-2015)')
+
+enroll_scatter
+
+# Scatter plot: public vs private
+sector_scatter <- enroll_sector %>% 
+  group_by(year, sector) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  ggplot(aes(x = year, y = total)) +
+    geom_point(aes(color = sector)) +
+    scale_color_manual(values = c('grey60', 'black')) +
+    theme_classic() +
+    labs(x = 'Year',
+         y = 'Enrollment (number of students)',
+         title = 'Enrollment, public vs. private sector (1967-2015)')
+
+sector_scatter
+
+```
+
+
+```{r linear regression: total male enrollment, echo=FALSE}
+
+# Linear regression for total male enrollment
+totals_m <- enrollment %>% 
+  group_by(year, sex) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'male')
+
+male_lm <- lm(total ~ year, data = totals_m)
+
+summary(male_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(male_lm)
+
+# Pearson's r
+male_pr <- cor.test(totals_m$year, totals_m$total)
+male_pr
+
+```
+
+On average, total male enrollment increased by 9069 students per year. Year was a sigificant predictor of total male enrollment (b = 9069, t(47) = 16.6, p < 0.001), with a strong positive correlation between the two (Pearson's r = 0.92). The overall model (enrollment = 9096 * year -17112153) explains a siginificant amount of variance in enrollment over time (F(1,47) = 276, p < 0.001, R^2^ = 0.85).
+
+```{r linear regression: total female enrollment, echo=FALSE}
+
+# Linear regression for total female enrollment
+totals_f <- enrollment %>% 
+  group_by(year, sex) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'female')
+
+female_lm <- lm(total ~ year, data = totals_f)
+
+summary(female_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(female_lm)
+
+# Pearson's r
+female_pr <- cor.test(totals_f$year, totals_f$total)
+female_pr
+
+```
+
+On average, total female enrollment increased by 30,126 students per year. Year was a sigificant predictor of total female enrollment (b = 30126, t(47) = 51.6, p < 0.001), with a strong correlation between the two (Pearson's r = 0.99). The overall model (enrollment = 30126 * year -58955502) explains a siginificant amount of variance in enrollment over time (F(1,47) = 2669, p < 0.001, R^2^ = 0.98).
+
+```{r linear regression: male vs female and full vs part, include=FALSE}
+
+### MALE - FULLTIME ###
+
+# Linear regression for male fulltime enrollment
+totals_m_f <- enrollment %>% 
+  group_by(year, sex, status) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'male',
+         status == 'fulltime')
+
+male_full_lm <- lm(total ~ year, data = totals_m_f)
+
+summary(male_full_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(male_full_lm)
+
+# Pearson's r
+male_full_pr <- cor.test(totals_m_f$year, totals_m_f$total)
+male_full_pr
+
+### FEMALE - FULLTIME ###
+
+# Linear regression for female fulltime enrollment
+totals_f_f <- enrollment %>% 
+  group_by(year, sex, status) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'female',
+         status == 'fulltime')
+
+female_full_lm <- lm(total ~ year, data = totals_f_f)
+
+summary(female_full_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(female_full_lm)
+
+# Pearson's r
+female_full_pr <- cor.test(totals_f_f$year, totals_f_f$total)
+female_full_pr
+
+### MALE - PARTTIME ###
+
+# Linear regression for male fulltime enrollment
+totals_m_p <- enrollment %>% 
+  group_by(year, sex, status) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'male',
+         status == 'parttime')
+
+male_part_lm <- lm(total ~ year, data = totals_m_p)
+
+summary(male_part_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(male_part_lm)
+
+# Pearson's r
+male_part_pr <- cor.test(totals_m_p$year, totals_m_p$total)
+male_part_pr
+
+### FEMALE - PARTTIME ###
+
+# Linear regression for female fulltime enrollment
+totals_f_p <- enrollment %>% 
+  group_by(year, sex, status) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'female',
+         status == 'parttime')
+
+female_part_lm <- lm(total ~ year, data = totals_f_p)
+
+summary(female_part_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(female_part_lm)
+
+# Pearson's r
+female_part_pr <- cor.test(totals_f_p$year, totals_f_p$total)
+female_part_pr
+
+```
+
+
+```{r table of linear regression parameters, echo=FALSE, results='asis'}
+
+# Table of linear regression parameters for male vs female and fulltime vs parttime models
+stargazer(male_lm, female_lm,
+          male_full_lm, male_part_lm,
+          female_full_lm, female_part_lm,
+          type = 'html',
+          omit.stat = c('LL', 'ser'),
+          covariate.labels = 'Year',
+          dep.var.labels = 'Enrollment',
+          column.labels = c('Total Male', 'Total Female',
+                            'Male/Full-time', 'Male/Part-time',
+                            'Female/Full-time', 'Female/Part-time'))
+
+```
+
