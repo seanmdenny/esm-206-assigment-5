@@ -1,4 +1,4 @@
-Faculty Rank,"Discipline (A = Theoretical, B = Applied)",Years Since PhD,Years Faculty Service,Sex,Salary ($)
+rank,discipline_(A=theoretical_B=applied),years_since_phd,years_faculty,sex,salary
 Prof,B,19,18,Male,139750
 Prof,B,20,16,Male,173200
 AsstProf,B,4,3,Male,79750
