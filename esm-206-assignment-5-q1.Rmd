@@ -1,0 +1,12 @@
+---
+title: "esm-2016-assignment-5-q1"
+author: "Sean Denny"
+date: "11/29/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###1 
