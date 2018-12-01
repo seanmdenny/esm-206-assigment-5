@@ -162,7 +162,7 @@ mwu_postdoc
 
 ```
 
-A Mann-Whitney U test revealed that there was not a significant difference between rankings of postdoc salaries between male and female doctorate recipients in 2015 (W = 108, p = 0.87). 
+A Mann-Whitney U test revealed that there was not a significant difference between rankings of postdoc salaries between male and female doctorate recipients in 2015 (W = 108, p = 0.87).  
 
 
 
