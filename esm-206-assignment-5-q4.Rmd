@@ -82,8 +82,8 @@ salary_sex <- prof_sal %>%
 ### 2. Test for corellations
 
 1. Coerce character variables into factors then numeric (i.e. change the class of the character data)
-2. Make sure the levels for each explanatory variable are in the right order. Rearrange them if necessary.
-3. Test for correlations among all of the explanatory variables. Can we do this if the variables are factors, or do we absolutely have to change them to numeric? **Create a new dataset without the response variable (salary) so you can run pairs() or cor() for the whole dataset.
+
+2. Test for correlations among all of the explanatory variables. Can we do this if the variables are factors, or do we absolutely have to change them to numeric? **Remember to create a new dataset without the response variable (salary) so you can run pairs() or cor() for the explanatory variables only.**
 
 ```{r testing for correlations}
 
@@ -103,14 +103,34 @@ pairs(cor_data)
 
 ```
 
+Before running the model, re-level the levels in rank so that Assistant Professor is the reference level. This isn't necessary but slightly easier for interpretation.
+
+```{r}
+prof_sal <- prof_sal %>% 
+  mutate(rank = as.factor(rank))
+
+prof_sal$rank <- fct_relevel(prof_sal$rank, "AsstProf")
+```
+
+
+
 ### 3. Build the model
 
-We're going to remove years_since_phd, which removes correlations with years_faculty and rank
+We're going to remove years_since_phd, which removes correlations with both years_faculty and rank. Also, these two variables (the ones we're keeping) are more interesting.
 
 Use lm() with the following syntax: lm(y ~ x1 + x2 + x3..., data = df_name)
 
 ```{r}
-prof_lm_1 <- lm(salary ~ sex + discipline + rank + years_since_faculty, data = prof_sal)
+prof_lm_1 <- lm(salary ~ sex + discipline + rank + years_faculty, data = prof_sal)
 
+summary(prof_lm_1)
 ```
 
+```{r model diagnostics}
+par(mfrow = c(2,2))
+plot(prof_lm_1)
+```
+
+**Problems with homescedasticity.** *Also, data isn't normally distributed at upper values?*
+
+**Is there a need to try other models? The variables we included are all interesting and make sense to include.**
