@@ -9,10 +9,128 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Question 4
+## Question 4
 
-```{r load packages and data}
+```{r load packages and data, message = FALSE}
 library(tidyverse)
-prof_sal <- read_csv("Faculty salary data (2008-2009 survey).csv")
+prof_sal <- read_csv("Faculty salary data (2008 - 2009 survey).csv")
 ```
 
+Rename discipline column:
+
+```{r}
+prof_sal <- prof_sal %>% 
+  rename(discipline = "discipline_(A=theoretical_B=applied)")
+```
+
+### 1. Explore the data
+
+```{r exploring by grouping/summarizing by explanatory variables, message = FALSE}
+
+#rank
+
+salary_rank <- prof_sal %>% 
+  group_by(rank) %>% 
+  summarize(
+    mean = mean(salary)
+)
+
+#As expected.
+
+#discipline; note: A = theoretical, B=applied
+
+salary_discipline <- prof_sal %>% 
+  group_by(discipline) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Average of applied salaries is higher.
+
+#years_since_phd
+
+salary_years_phd <- prof_sal %>% 
+  group_by(years_since_phd) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Generally increases, but not consistent.
+
+#years_faculty
+
+salary_years_faculty <- prof_sal %>% 
+  group_by(years_faculty) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Appears to genereally increase, but not consistent.
+
+#sex
+
+salary_sex <- prof_sal %>% 
+  group_by(sex) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Average of males is higher.
+
+```
+
+### 2. Test for corellations
+
+1. Coerce character variables into factors then numeric (i.e. change the class of the character data)
+
+2. Test for correlations among all of the explanatory variables. Can we do this if the variables are factors, or do we absolutely have to change them to numeric? **Remember to create a new dataset without the response variable (salary) so you can run pairs() or cor() for the explanatory variables only.**
+
+```{r testing for correlations}
+
+cor_data <- select(prof_sal, -salary) %>% 
+  mutate(rank = as.factor(rank)) %>% 
+  mutate(rank = as.numeric(rank)) %>% 
+  mutate(discipline = as.factor(discipline)) %>% 
+  mutate(discipline = as.numeric(discipline)-1) %>% 
+  mutate(sex = as.factor(sex)) %>% 
+  mutate(sex = as.numeric(sex)-1)
+
+cor(cor_data)
+pairs(cor_data)
+
+#Correlation for years_since_phd and rank = 0.53
+#years_since_phd and years_faculty = 0.91
+
+```
+
+Before running the model, re-level the levels in rank so that Assistant Professor is the reference level. This isn't necessary but slightly easier for interpretation.
+
+```{r}
+prof_sal <- prof_sal %>% 
+  mutate(rank = as.factor(rank))
+
+prof_sal$rank <- fct_relevel(prof_sal$rank, "AsstProf")
+```
+
+
+
+### 3. Build the model
+
+We're going to remove years_since_phd, which removes correlations with both years_faculty and rank. Also, these two variables (the ones we're keeping) are more interesting.
+
+Use lm() with the following syntax: lm(y ~ x1 + x2 + x3..., data = df_name)
+
+```{r}
+prof_lm_1 <- lm(salary ~ sex + discipline + rank + years_faculty, data = prof_sal)
+
+summary(prof_lm_1)
+```
+
+```{r model diagnostics}
+par(mfrow = c(2,2))
+plot(prof_lm_1)
+```
+
+**Problems with homescedasticity.** *Also, data isn't normally distributed at upper values?*
+
+**Is there a need to try other models? The variables we included are all interesting and make sense to include.**
