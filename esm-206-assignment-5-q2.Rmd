@@ -12,7 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 
-```{r packages & data}
+### Q2: Shifts in female PhD recipients by field (1985, 2000, and 2015)
+
+Describe if and how there was a shift in PhDs awarded to females in four fields (Physical and Earth Sciences, Engineering, Education, and Humanities & Arts) in 1985, 2000, and 2015. Describe your results statistically, in a graph or table, and in text. Note: There are several ways that you can interpret this question. You are invited to decide which you think is/are most interesting. Just be really clear about what you are asking/answering in your report.
+
+```{r packages & data, include=FALSE}
 
 # Load necessary packages
 
@@ -20,32 +24,87 @@ library(tidyverse)
 
 # Load necessary data
 
-fac_salary <- read_csv('Faculty salary data (2008 - 2009 survey).csv')
-enroll <- read_csv('Grad enrollment 1967 - 2015.csv')
-phd_salary <- read_csv('Median salary for doctoral recipients.csv')
-phds <- read_csv('PhDs by Field 1985 - 2015.csv')
+phds_csv <- read_csv('PhDs by Field 1985 - 2015.csv')
 
 ```
 
 
-```{r reformat data}
+```{r reformatting dataframes, include=FALSE}
 
-# Reformat phd_salary dataframe
+# Reformatted, simplified, truncated dataframe
 
-phd_salary_employment <- phd_salary %>% 
-  select(field, employment.male, employment.female) %>% 
-  rename(male = employment.male,
-         female = employment.female) %>% 
-  gather(key = sex, value = employment, 2:3)
-
-phd_salary_postdoc <- phd_salary %>% 
-  select(field, postdoc.male, postdoc.female) %>%
-  rename(male = postdoc.male,
-         female = postdoc.female) %>% 
-  gather(key = sex, value = postdoc, 2:3)
-
-phd_salary2 <- full_join(phd_salary_employment, phd_salary_postdoc,
-                         by = c('field', 'sex'))
+phds <- phds_csv %>% 
+  gather(key = year, value = doctorates, 3:9) %>% 
+  filter(sex != 'total',
+         year == 1985 | year == 2000 | year == 2015,
+         field == 'Physical sciences and earth sciences' |
+           field == 'Engineering' |
+           field == 'Education' |
+           field == 'Humanities and arts')
 
 ```
 
+
+```{r column graphs, echo=FALSE}
+
+# Phds awarded by field over time (MALES)
+males <- phds %>% 
+  filter(sex == 'male') %>%
+  group_by(year) %>% 
+  mutate(prop = doctorates/sum(doctorates)*100)
+  
+males_col <- ggplot(males, aes(x = year, y = prop)) +
+  geom_col(aes(fill = field)) +
+  labs(x = 'Year',
+       y = 'Doctorates awarded (%)',
+       title = 'Doctorates awarded by field, males only (1985-2015)') +
+  theme_minimal()
+
+males_col
+
+# Phds awarded by field over time (FEMALES)
+females <- phds %>% 
+  filter(sex == 'female') %>%
+  group_by(year) %>% 
+  mutate(prop = doctorates/sum(doctorates)*100)
+  
+females_col <- ggplot(females, aes(x = year, y = prop)) +
+  geom_col(aes(fill = field)) +
+  theme_classic() +
+  labs(x = 'Year',
+       y = 'Doctorates awarded (%)',
+       title = 'Doctorates awarded by field, females only (1985-2015)') +
+  theme_minimal()
+
+females_col
+
+```
+
+
+```{r chi squared, echo=FALSE, warning=FALSE}
+
+# Make a contigency table of counts of doctorates per field over time (MALES ONLY)
+males2 <- males %>% 
+  select(field, year, doctorates) %>% 
+  spread(key = year, value = doctorates)
+males3 <- males2[,2:4]
+rownames(males3) <- males2$field
+
+# Run chi-square test
+male_chi <- chisq.test(males3)
+
+male_chi
+
+# Make a contigency table of counts of doctorates per field over time (FEMALES ONLY)
+females2 <- females %>% 
+  select(field, year, doctorates) %>% 
+  spread(key = year, value = doctorates)
+females3 <- females2[,2:4]
+rownames(females3) <- females2$field
+
+# Run chi-square test
+female_chi <- chisq.test(females3)
+
+female_chi
+
+```
