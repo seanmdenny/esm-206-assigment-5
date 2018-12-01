@@ -1,0 +1,188 @@
+---
+title: "esm-206-assignment-5-q3"
+author: "Ken Gilliland"
+date: "November 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+
+# load necessary packages
+
+library(tidyverse)
+library(pwr)
+library(knitr)
+library(kableExtra)
+library(plotly)
+library(ggrepel)
+library(effsize)
+library(pwr)
+library(vcdExtra)
+library(car)
+
+
+
+```
+
+```{r, include= FALSE}
+# Load necessary data
+
+phd_salary <- read_csv('Median salary for doctoral recipients.csv')
+
+# Reformat phd_salary dataframe
+
+phd_salary_employment <- phd_salary %>% 
+  select(field, employment.male, employment.female) %>% 
+  rename(male = employment.male,
+         female = employment.female) %>% 
+  gather(key = sex, value = employment, 2:3)
+
+phd_salary_postdoc <- phd_salary %>% 
+  select(field, postdoc.male, postdoc.female) %>%
+  rename(male = postdoc.male,
+         female = postdoc.female) %>% 
+  gather(key = sex, value = postdoc, 2:3)
+
+phd_salary2 <- full_join(phd_salary_employment, phd_salary_postdoc,
+                         by = c('field', 'sex'))
+
+as.data.frame(phd_salary2) %>% 
+  filter(employment != -99999) %>% 
+  filter(postdoc != -99999) # filtering out NAs  
+
+View (phd_salary2)
+```
+
+
+```{r}
+#histogram for employment
+
+median_hist_emp<- ggplot(phd_salary2, aes(x = employment)) +
+  geom_histogram(aes(fill = employment)) +
+  facet_wrap(~ sex, scale = "free")
+
+median_hist_emp
+```
+
+```{r}
+qq_employment<- ggplot(phd_salary2, (aes(sample= employment))) +
+  geom_qq(aes(color = sex)) +
+  facet_wrap(~sex, scale = "free")
+
+qq_employment
+```
+
+```{r}
+#histogram for postdoc
+
+median_hist_post<- ggplot(phd_salary2, aes(x = postdoc)) +
+  geom_histogram(aes(fill = postdoc)) +
+  facet_wrap(~ sex, scale = "free")
+
+median_hist_post
+```
+
+```{r}
+qq_postdoc<- ggplot(phd_salary2, (aes(sample= postdoc))) +
+  geom_qq(aes(color = sex)) +
+  facet_wrap(~sex, scale = "free")
+
+qq_postdoc
+```
+
+based on qqplots and histograms observations for each group appear to not be normally distrubuted. Also, n > 15 for all groups, so means may not be distrubuted
+
+```{r, echo = FALSE}
+# Individual dataframe for male employment
+
+employment_male <- phd_salary2  %>% 
+  filter(sex == "male") %>%    # keeps only male
+  select(employment) # keeps only employment
+
+as.vector(employment_male)
+
+View(employment_male)
+```
+
+```{r, echo = FALSE}
+# Individual dataframe for female employment
+
+employment_female <- phd_salary2  %>% 
+  filter(sex == "female") %>%    # keeps only female
+  select(employment) # keeps only employment
+
+as.vector(employment_female)
+
+View(employment_female)
+```
+
+```{r, echo = FALSE}
+
+# F-test for equal variances between male and female employment
+
+var.test(employment_male,employment_female, data = .) # F-test
+
+# UPDATE Variances are the same use a student's t
+
+```
+
+```{r, echo = FALSE}
+
+# 2-sided, 2-sample t-test between between male and female employment
+
+employment_t <- t.test(employment_male,employment_female, data = ., var.equal = FALSE)
+
+employment_t
+```
+
+```{r, echo = FALSE}
+
+# Effect size of the differences of size 2012 vs 2017
+
+Cohen_d <- cohen.d(employment_male, employment_female)
+
+Cohen_d
+
+#(Cohen's d = 0.UPDATE)
+# Absolute difference 2012 = UPDATE 
+```
+
+*****************************************************************
+```{r, echo = FALSE}
+# Individual dataframe for male postdoc
+
+postdoc_male <- phd_salary2  %>% 
+  filter(sex == "male") %>%    # keeps only male
+  select(postdoc) # keeps only postdoc
+
+as.vector(postdoc_male)  
+
+View(postdoc_male)
+```
+
+```{r, echo = FALSE}
+# Individual dataframe for female postdoc
+
+postdoc_female <- phd_salary2  %>% 
+  filter(sex == "female") %>%    # keeps only female
+  select(postdoc) # keeps only postdoc
+
+as.vector(postdoc_female)  
+
+View(postdoc_female)
+```
+
+```{r, echo = FALSE}
+
+# F-test for equal variances between male and female postdoc
+
+var.test(postdoc_male, postdoc_female, data = .) # F-test
+
+
+# UPDATE Variances are the same use a student's t
+
+```
