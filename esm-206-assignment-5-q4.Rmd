@@ -9,10 +9,107 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Question 4
+## Question 4
 
 ```{r load packages and data}
 library(tidyverse)
-prof_sal <- read_csv("Faculty salary data (2008-2009 survey).csv")
+prof_sal <- read_csv("Faculty salary data (2008 - 2009 survey).csv")
+```
+
+Rename discipline column:
+
+```{r}
+prof_sal <- prof_sal %>% 
+  rename(discipline = "discipline_(A=theoretical_B=applied)")
+```
+
+### 1. Explore the data
+
+```{r grouping and summarizing by expanatory variables}
+
+#rank
+
+salary_rank <- prof_sal %>% 
+  group_by(rank) %>% 
+  summarize(
+    mean = mean(salary)
+)
+
+#As expected.
+
+#discipline; note: A = theoretical, B=applied
+
+salary_discipline <- prof_sal %>% 
+  group_by(discipline) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Average of applied salaries is higher.
+
+#years_since_phd
+
+salary_years_phd <- prof_sal %>% 
+  group_by(years_since_phd) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Generally increases, but not consistent.
+
+#years_faculty
+
+salary_years_faculty <- prof_sal %>% 
+  group_by(years_faculty) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Appears to genereally increase, but not consistent.
+
+#sex
+
+salary_sex <- prof_sal %>% 
+  group_by(sex) %>% 
+  summarize(
+    mean = mean(salary)
+  )
+
+#Average of males is higher
+
+```
+
+### 2. Test for corellations
+
+1. Coerce character variables into factor variables (i.e. change the class of the character data)
+2. Make sure the levels for each explanatory variable are in the right order. Rearrange them if necessary.
+3. Test for correlations among all of the explanatory variables. Can we do this if the variables are factors, or do we absolutely have to change them to numeric? **Create a new dataset without the response variable (salary) so you can run pairs() or cor() for the whole dataset.
+
+```{r}
+
+
+
+pairs(prof_sal)
+cor(prof_sal$years_since_phd, prof_sal$years_faculty)
+levels(prof_sal$rank)
+summary(prof_sal)
+unique(prof_sal$rank)
+```
+
+### 3. Build the model
+
+Use lm() with the following syntax: lm(y ~ x1 + x2 + x3..., data = df_name)
+
+```{r}
+prof_lm_1 <- lm(salary ~ sex, data = prof_sal)
+
+summary(prof_lm_1)
+
+#Males make $14,088 more than females.
+
+#R squared = 0.1673
+
+summary(prof_lm_2)
+
 ```
 
