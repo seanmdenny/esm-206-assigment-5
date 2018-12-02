@@ -50,7 +50,7 @@ phd_salary_postdoc <- phd_salary %>%
 phd_salary2 <- full_join(phd_salary_employment, phd_salary_postdoc,
                          by = c('field', 'sex'))
 
-as.data.frame(phd_salary2) %>% 
+as.vector(phd_salary2) %>% 
   filter(employment != -99999) %>% 
   filter(postdoc != -99999) # filtering out NAs  
 
@@ -94,95 +94,95 @@ qq_postdoc<- ggplot(phd_salary2, (aes(sample= postdoc))) +
 qq_postdoc
 ```
 
-based on qqplots and histograms observations for each group appear to not be normally distrubuted. Also, n > 15 for all groups, so means may not be distrubuted
+based on qqplots and histograms observations for each group appear to not be normally distrubuted. Also, n < 15 for all groups, so means may not be distrubuted
 
-```{r, echo = FALSE}
-# Individual dataframe for male employment
+Perform a Mann-Whitney U
 
-employment_male <- phd_salary2  %>% 
-  filter(sex == "male") %>%    # keeps only male
-  select(employment) # keeps only employment
+Professional male and female salaries
 
-as.vector(employment_male)
+```{r}
+employment_sal <- phd_salary2  %>% 
+    select(employment, sex) # keeps postdoc and sex
 
-View(employment_male)
+View (employment_sal)
 ```
 
-```{r, echo = FALSE}
-# Individual dataframe for female employment
+```{r}
+#Is there a significant difference in employment salary for males and females?
 
-employment_female <- phd_salary2  %>% 
-  filter(sex == "female") %>%    # keeps only female
-  select(employment) # keeps only employment
+# Unpaired: Mann-Whitney U
 
-as.vector(employment_female)
+mwu_employment <- employment_sal %>%
+  wilcox.test(employment ~ sex, data = .)
 
-View(employment_female)
+mwu_employment
+
+# There is no significant difference in employment salaries between males and females.
 ```
 
-```{r, echo = FALSE}
+A Mann-Whitney U test revealed that there was not a significant difference between rankings of professional salaries between male and female doctorate recipients in 2015 (W = 88.5, p = 0.32). 
 
-# F-test for equal variances between male and female employment
+```{r}
 
-var.test(employment_male,employment_female, data = .) # F-test
+sex_names <- c("Female", "Male")
 
-# UPDATE Variances are the same use a student's t
+sex_color <- c("white", "gray60")
+
+employment_box <- ggplot(employment_sal, aes(x = sex, y = employment)) +
+  geom_boxplot(aes(fill = sex)) +
+  scale_fill_manual(values = sex_color) +
+  theme_classic() +
+  scale_x_discrete(labels = sex_names) +
+  labs(x = "Sex", y = "Median Professional Salary (dollars) (n = 30)") +
+  theme(plot.title = element_text(hjust = 0.5))
+  
+
+employment_box
+```
+Postdoc male and female salaries
+
+```{r}
+postdoc_sal <- phd_salary2  %>% 
+    select(postdoc, sex) # keeps postdoc and sex
+
+View (postdoc_sal)
+```
+
+```{r}
+#Is there a significant difference in postdoc salary for males and females?
+
+# Unpaired: Mann-Whitney U
+
+mwu_postdoc <- postdoc_sal %>%
+  wilcox.test(postdoc ~ sex, data = .)
+
+mwu_postdoc
+
+# There is no significant difference in postdoc salaries between males and females.
 
 ```
 
-```{r, echo = FALSE}
+A Mann-Whitney U test revealed that there was not a significant difference between rankings of postdoc salaries between male and female doctorate recipients in 2015 (W = 108, p = 0.87).  
 
-# 2-sided, 2-sample t-test between between male and female employment
 
-employment_t <- t.test(employment_male,employment_female, data = ., var.equal = FALSE)
 
-employment_t
+```{r}
+
+sex_names <- c("Female", "Male")
+
+sex_color <- c("white", "gray60")
+
+postdoc_box <- ggplot(postdoc_sal, aes(x = sex, y = postdoc)) +
+  geom_boxplot(aes(fill = sex)) +
+  scale_fill_manual(values = sex_color) +
+  theme_classic() +
+  scale_x_discrete(labels = sex_names) +
+  labs(x = "Sex", y = "Median Postdoctoral Salary (dollars) (n = 30)") +
+  theme(plot.title = element_text(hjust = 0.5))
+  
+
+postdoc_box
 ```
 
-```{r, echo = FALSE}
-
-# Effect size of the differences of size 2012 vs 2017
-
-Cohen_d <- cohen.d(employment_male, employment_female)
-
-Cohen_d
-
-#(Cohen's d = 0.UPDATE)
-# Absolute difference 2012 = UPDATE 
-```
-
-*****************************************************************
-```{r, echo = FALSE}
-# Individual dataframe for male postdoc
-
-postdoc_male <- phd_salary2  %>% 
-  filter(sex == "male") %>%    # keeps only male
-  select(postdoc) # keeps only postdoc
-
-as.vector(postdoc_male)  
-
-View(postdoc_male)
-```
-
-```{r, echo = FALSE}
-# Individual dataframe for female postdoc
-
-postdoc_female <- phd_salary2  %>% 
-  filter(sex == "female") %>%    # keeps only female
-  select(postdoc) # keeps only postdoc
-
-as.vector(postdoc_female)  
-
-View(postdoc_female)
-```
-
-```{r, echo = FALSE}
-
-# F-test for equal variances between male and female postdoc
-
-var.test(postdoc_male, postdoc_female, data = .) # F-test
 
 
-# UPDATE Variances are the same use a student's t
-
-```
