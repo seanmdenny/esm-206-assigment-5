@@ -112,8 +112,6 @@ prof_sal <- prof_sal %>%
 prof_sal$rank <- fct_relevel(prof_sal$rank, "AsstProf")
 ```
 
-
-
 ### 3. Build the model
 
 We're going to remove years_since_phd, which removes correlations with both years_faculty and rank. Also, these two variables (the ones we're keeping) are more interesting.
@@ -126,11 +124,28 @@ prof_lm_1 <- lm(salary ~ sex + discipline + rank + years_faculty, data = prof_sa
 summary(prof_lm_1)
 ```
 
+**Adjusted R-squared is 0.4407.** Meaning the variance in salary is not particularly well explained by variance in the... model output? explanatory variables?
+
 ```{r model diagnostics}
 par(mfrow = c(2,2))
 plot(prof_lm_1)
 ```
 
-**Problems with homescedasticity.** *Also, data isn't normally distributed at upper values?*
+**Problems with homescedasticity. The data appear heteroscedastic.** *Also, data isn't normally distributed at upper values?*
 
 **Is there a need to try other models? The variables we included are all interesting and make sense to include.**
+
+### 4. Figures
+
+```{r stargazer table with model outputs}
+
+library(stargazer)
+
+```
+
+
+
+```{r plots?}
+
+```
+
