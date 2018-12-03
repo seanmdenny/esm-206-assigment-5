@@ -21,6 +21,7 @@ Describe if and how there was a shift in PhDs awarded to females in four fields 
 # Load necessary packages
 
 library(tidyverse)
+library(RColorBrewer)
 
 # Load necessary data
 
@@ -52,12 +53,30 @@ males <- phds %>%
   filter(sex == 'male') %>%
   group_by(year) %>% 
   mutate(prop = doctorates/sum(doctorates)*100)
+
+field_levels <- c('Education',
+                  'Humanities and arts',
+                  'Engineering',
+                  'Physical sciences and earth sciences')
+males$field <- as_factor(males$field, levels = field_levels)
   
-males_col <- ggplot(males, aes(x = year, y = prop)) +
-  geom_col(aes(fill = field)) +
+field_labs <- c('Physical and earth sciences',
+                'Engineering',
+                'Education',
+                'Humanities and arts')
+
+males_col <- ggplot(males, aes(x = year, y = prop,
+                               fill = field)) +
+  geom_col() +
+  geom_text(aes(x = year, y = prop,
+                label = doctorates),
+            position = position_stack(vjust = 0.5), size = 3) +
+  scale_fill_brewer(type = 'qual', palette = 3, direction = -1,
+                    name = 'Field',
+                    labels = field_labs) +
   labs(x = 'Year',
        y = 'Doctorates awarded (%)',
-       title = 'Doctorates awarded by field, males only (1985-2015)') +
+       title = 'Males') +
   theme_minimal()
 
 males_col
@@ -68,12 +87,21 @@ females <- phds %>%
   group_by(year) %>% 
   mutate(prop = doctorates/sum(doctorates)*100)
   
-females_col <- ggplot(females, aes(x = year, y = prop)) +
-  geom_col(aes(fill = field)) +
+females$field <- as_factor(males$field, levels = field_levels)
+
+females_col <- ggplot(females, aes(x = year, y = prop,
+                                   fill = field)) +
+  geom_col() +
+  geom_text(aes(x = year, y = prop,
+                label = doctorates),
+            position = position_stack(vjust = 0.5), size = 3) +
+  scale_fill_brewer(type = 'qual', palette = 3, direction = -1,
+                    name = 'Field',
+                    labels = field_labs) +
   theme_classic() +
   labs(x = 'Year',
        y = 'Doctorates awarded (%)',
-       title = 'Doctorates awarded by field, females only (1985-2015)') +
+       title = 'Females') +
   theme_minimal()
 
 females_col
@@ -89,6 +117,10 @@ males2 <- males %>%
   spread(key = year, value = doctorates)
 males3 <- males2[,2:4]
 rownames(males3) <- males2$field
+males4 <- males2 %>% 
+  mutate(prop_1985 = `1985`/sum(`1985`),
+         prop_2000 = `2000`/sum(`2000`),
+         prop_2015 = `2015`/sum(`2015`))
 
 # Run chi-square test
 male_chi <- chisq.test(males3)
@@ -101,6 +133,10 @@ females2 <- females %>%
   spread(key = year, value = doctorates)
 females3 <- females2[,2:4]
 rownames(females3) <- females2$field
+females4 <- females2 %>% 
+  mutate(prop_1985 = `1985`/sum(`1985`),
+         prop_2000 = `2000`/sum(`2000`),
+         prop_2015 = `2015`/sum(`2015`))
 
 # Run chi-square test
 female_chi <- chisq.test(females3)
