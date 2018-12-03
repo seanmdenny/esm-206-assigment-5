@@ -9,6 +9,10 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+##Question 3:
+
+**Male and female salaries for starting postdoctoral and other employment positions (2015).** Compare median salaries for male and female doctorate recipients in 2015. Answer these two questions: Does median salary differ significantly between male and female starting postdoc positions? Does median salary differ significantly between male and female PhD recipients in non-postdoc employment positions?
+
 ```{r, include = FALSE}
 
 # load necessary packages
