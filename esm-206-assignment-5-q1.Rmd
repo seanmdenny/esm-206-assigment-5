@@ -86,14 +86,20 @@ total_scatter <- enrollment %>%
 total_scatter
 
 # Scatter plot: male vs female, fulltime vs parttime
-enroll_scatter <- ggplot(enrollment, aes(x = year, y = enrollment)) +
+enroll_scatter <- ggplot(enrollment, aes(x = year,
+                                         y = enrollment/1000)) +
   geom_point(aes(color = sex, shape = status)) +
-  scale_shape_manual(values = c(19, 1)) +
-  theme_classic() +
+  scale_shape_manual(values = c(19, 1),
+                     name = 'Enrollment Status',
+                     labels = c('Full-time', 'Part-time')) +
+  scale_color_manual(values = c('orange', 'blue'),
+                     name = 'Sex',
+                     labels = c('Female', 'Male')) +
   labs(x = 'Year',
-       y = 'Enrollment (number of students)',
-       title = 'Enrollment over time (1967-2015)')
-
+       y = 'Enrollment (thousands of students)',
+       title = 'Enrollment over time (1967-2015)') +
+  scale_y_continuous(limits = c(0, 1000)) +
+  theme_classic()
 enroll_scatter
 
 # Scatter plot: public vs private
@@ -167,6 +173,7 @@ On average, total female enrollment increased by 30,126 students per year. Year 
 
 # Linear regression for male fulltime enrollment
 totals_m_f <- enrollment %>% 
+  mutate(enrollment = enrollment/1000) %>% 
   group_by(year, sex, status) %>% 
   summarize(total = sum(enrollment)) %>% 
   filter(sex == 'male',
@@ -188,6 +195,7 @@ male_full_pr
 
 # Linear regression for female fulltime enrollment
 totals_f_f <- enrollment %>% 
+  mutate(enrollment = enrollment/1000) %>% 
   group_by(year, sex, status) %>% 
   summarize(total = sum(enrollment)) %>% 
   filter(sex == 'female',
@@ -208,7 +216,8 @@ female_full_pr
 ### MALE - PARTTIME ###
 
 # Linear regression for male fulltime enrollment
-totals_m_p <- enrollment %>% 
+totals_m_p <- enrollment %>%
+  mutate(enrollment = enrollment/1000) %>% 
   group_by(year, sex, status) %>% 
   summarize(total = sum(enrollment)) %>% 
   filter(sex == 'male',
@@ -230,6 +239,7 @@ male_part_pr
 
 # Linear regression for female fulltime enrollment
 totals_f_p <- enrollment %>% 
+  mutate(enrollment = enrollment/1000) %>% 
   group_by(year, sex, status) %>% 
   summarize(total = sum(enrollment)) %>% 
   filter(sex == 'female',
@@ -246,6 +256,79 @@ plot(female_part_lm)
 # Pearson's r
 female_part_pr <- cor.test(totals_f_p$year, totals_f_p$total)
 female_part_pr
+
+```
+
+
+```{r graph of lms, echo=FALSE}
+
+# Plot: linear regressions for male vs female, fulltime vs parttime
+enroll_lms <- ggplot(totals_m_f, aes(x = year, y = total/1000)) +
+  geom_smooth(method = 'lm',
+              color = 'blue', fill = 'blue',
+              show.legend = TRUE) +
+  geom_smooth(data = totals_m_p,
+              aes(x = year, y = total/1000),
+              method = 'lm',
+              color = 'blue', fill = 'blue', linetype = 'dashed',
+              show.legend = TRUE) +
+  geom_smooth(data = totals_f_f,
+              aes(x = year, y = total/1000),
+              method = 'lm',
+              color = 'orange', fill = 'orange',
+              show.legend = TRUE) +
+  geom_smooth(data = totals_f_p,
+              aes(x = year, y = total/1000),
+              method = 'lm',
+              color = 'orange', fill = 'orange', linetype = 'dashed',
+              show.legend = TRUE) +
+  labs(x = 'Year',
+       y = 'Enrollment (thousands of students)',
+       title = 'Enrollment over time (1967-2015)') +
+  scale_y_continuous(limits = c(0, 1000)) +
+  theme_classic()
+
+enroll_lms
+
+# Scatter plot
+enroll_scatter <- ggplot(enrollment, aes(x = year,
+                                         y = enrollment/1000)) +
+  geom_point(aes(color = sex, shape = status)) +
+  scale_shape_manual(values = c(19, 1),
+                     name = 'Enrollment Status',
+                     labels = c('Full-time', 'Part-time')) +
+  scale_color_manual(values = c('orange', 'blue'),
+                     name = 'Sex',
+                     labels = c('Female', 'Male')) +
+  labs(x = 'Year',
+       y = 'Enrollment (thousands of students)',
+       title = 'Enrollment over time (1967-2015)') +
+  scale_y_continuous(limits = c(0, 1000)) +
+  theme_classic()
+
+enroll_scatter
+
+# Lines for legend
+v1 <- c(1,2,3,4,5,6,7,8,9,10)
+v2 <- c(1,2,1,1,1,1,1,1,2,1)
+v3 <- c(2,3,2,2,2,2,2,2,3,2)
+v4 <- c(3,4,3,3,3,3,3,3,4,3)
+v5 <- c(4,5,4,4,4,4,4,4,5,4)
+df <- data_frame(v1,v2,v3,v4,v5)
+plot <- ggplot(df, aes(x = v1, v2)) +
+  geom_smooth(method = 'lm',
+              color = 'blue', fill = 'blue') +
+  geom_smooth(aes(x = v1, y = v3),
+              method = 'lm',
+              color = 'blue', fill = 'blue', linetype = 'dashed') +
+  geom_smooth(aes(x = v1, y = v4),
+              method = 'lm',
+              color = 'orange', fill = 'orange') +
+  geom_smooth(aes(x = v1, y = v5),
+              method = 'lm',
+              color = 'orange', fill = 'orange', linetype = 'dashed') +
+  theme_classic()
+plot
 
 ```
 
