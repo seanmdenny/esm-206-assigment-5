@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r load packages and data, message = FALSE}
 library(tidyverse)
+library(stargazer)
 prof_sal <- read_csv("Faculty salary data (2008 - 2009 survey).csv")
 ```
 
@@ -135,19 +136,26 @@ plot(prof_lm_1)
 
 **Problems with homescedasticity. The data appear heteroscedastic.** *Also, data isn't normally distributed at upper values?*
 
-**Is there a need to try other models? The variables we included are all interesting and make sense to include.**
+**Is there a need to try other models? The variables we included are all interesting and make sense to include.** No, it doesn't.
+
+**Remember that years_since_phd still is an explanatory factor.**
 
 ### 4. Figures
 
 ```{r stargazer table with model outputs}
 
-library(stargazer)
+#Prepare a regression table:
 
-```
+stargazer(prof_lm_1)
 
+# If you want to work with this in Word, save to html, open, copy and paste into Word. Note that you specify the output 'type' as html here:
 
+#stargazer(prof_lm_1, type = "html")
 
-```{r plots?}
+#stargazer(home_lm, home_lm2, type= "html",
+         # title="My great title",
+         # digits = 2) #digits=2 rounds the results to two digits
+
 
 ```
 
