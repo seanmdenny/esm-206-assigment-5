@@ -189,4 +189,16 @@ postdoc_box
 ```
 
 
+```{r}
+
+# Summary table
+
+sal_summary <- phd_salary2 %>% 
+  gather(key = job, value = salary, 3:4) %>% 
+  group_by(sex, job) %>% 
+  summarize(median = median(salary),
+            n = length(salary))
+
+```
+
 
