@@ -32,10 +32,15 @@ phds_csv <- read_csv('PhDs by Field 1985 - 2015.csv')
 
 ```{r reformatting dataframes, include=FALSE}
 
+test <- phds_csv %>% 
+  select(field, sex, `2015`) %>% 
+  group_by(sex) %>% 
+  summarize(sum(`2015`))
+
 # Reformatted, simplified, truncated dataframe
 
 phds <- phds_csv %>% 
-  gather(key = year, value = doctorates, 3:9) %>% 
+  gather(key = year, value = doctorates, 3:9) %>% # create new columns 'year' (filled with values from the names of columns 3-9) and 'doctorates' (filled with the data within those columns)
   filter(sex != 'total',
          year == 1985 | year == 2000 | year == 2015,
          field == 'Physical sciences and earth sciences' |
@@ -48,17 +53,21 @@ phds <- phds_csv %>%
 
 ```{r column graphs, echo=FALSE}
 
-# Phds awarded by field over time (MALES)
+##### Column graph of PhDs awarded by field over time (MALES only)
+
+# Dataframe of males only
 males <- phds %>% 
   filter(sex == 'male') %>%
   group_by(year) %>% 
-  mutate(prop = doctorates/sum(doctorates)*100)
+  mutate(prop = doctorates/sum(doctorates)*100) # add column for proportion
 
 field_levels <- c('Education',
                   'Humanities and arts',
                   'Engineering',
                   'Physical sciences and earth sciences')
-males$field <- as_factor(males$field, levels = field_levels)
+males$field <- as_factor(males$field, levels = field_levels) # Change levels of the 'field' factor so they're ordered
+
+# Column graph
   
 field_labs <- c('Physical and earth sciences',
                 'Engineering',
@@ -68,8 +77,8 @@ field_labs <- c('Physical and earth sciences',
 males_col <- ggplot(males, aes(x = year, y = prop,
                                fill = field)) +
   geom_col() +
-  geom_text(aes(x = year, y = prop,
-                label = doctorates),
+  geom_text(aes(x = year, y = prop, # adds labels with numbers
+                label = round(prop, 1)), # using the proportion data
             position = position_stack(vjust = 0.5), size = 3) +
   scale_fill_brewer(type = 'qual', palette = 3, direction = -1,
                     name = 'Field',
@@ -81,7 +90,11 @@ males_col <- ggplot(males, aes(x = year, y = prop,
 
 males_col
 
-# Phds awarded by field over time (FEMALES)
+
+
+##### Column graph of PhDs awarded by field over time (FEMALES only)
+
+# Dataframe of females only 
 females <- phds %>% 
   filter(sex == 'female') %>%
   group_by(year) %>% 
@@ -89,11 +102,12 @@ females <- phds %>%
   
 females$field <- as_factor(males$field, levels = field_levels)
 
+# Column graph
 females_col <- ggplot(females, aes(x = year, y = prop,
                                    fill = field)) +
   geom_col() +
   geom_text(aes(x = year, y = prop,
-                label = doctorates),
+                label = round(prop, 1)),
             position = position_stack(vjust = 0.5), size = 3) +
   scale_fill_brewer(type = 'qual', palette = 3, direction = -1,
                     name = 'Field',
@@ -144,3 +158,13 @@ female_chi <- chisq.test(females3)
 female_chi
 
 ```
+
+
+```{r summary table}
+
+summary_table <- phds %>% 
+  group_by(sex) %>% 
+  summarize(n = sum(doctorates))
+
+```
+

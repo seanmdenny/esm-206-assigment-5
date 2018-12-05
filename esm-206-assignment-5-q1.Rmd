@@ -34,36 +34,46 @@ enroll <- read_csv('Grad enrollment 1967 - 2015.csv',
 
 ```{r reformatting dataframes, include=FALSE}
 
-# Dataframe for male vs. female, fulltime vs parttime enrollment
-enroll_full <- enroll %>% 
-  select(year, full_m, full_f) %>% 
-  rename(male = full_m,
-         female = full_f) %>% 
-  gather(key = sex, value = enrollment, 2:3) %>% 
-  mutate(status = 'fulltime')
+### Dataframe for male vs. female, fulltime vs parttime enrollment ###
 
+# Dataframe for full-time enrollment only
+enroll_full <- enroll %>% 
+  select(year, full_m, full_f) %>% # select only columns for full-time students, male vs. females (NOT totals)
+  rename(male = full_m,
+         female = full_f)  %>% 
+  gather(key = sex, value = enrollment, 2:3) %>% # create new columns 'sex' (filled with values from the names of columns 2-3) and 'enrollment' (filled with the data within those columns)
+  mutate(status = 'fulltime') # add a column for enrollment status
+
+# Dataframe for part-time enrollment only
 enroll_part <- enroll %>% 
-  select(year, part_m, part_f) %>% 
+  select(year, part_m, part_f) %>% # select only columns for part-time students, male vs. females (NOT totals)
   rename(male = part_m,
          female = part_f) %>% 
-  gather(key = sex, value = enrollment, 2:3) %>% 
-  mutate(status = 'parttime')
+  gather(key = sex, value = enrollment, 2:3) %>% # create new columns 'sex' (filled with values from the names of columns 2-3) and 'enrollment' (filled with the data within those columns)
+  mutate(status = 'parttime')# add a column for enrollment status
 
-enrollment <- rbind(enroll_full, enroll_part) %>% 
-  select(year, sex, status, enrollment)
+# Combine full-time and part-time dataframes together vertically
+enrollment <- rbind(enroll_full, enroll_part) %>% # rbind adds dataframes together by rows
+  select(year, sex, status, enrollment) # reorder columns
 
-# Dataframe for public vs. private enrollment
+
+
+### Dataframe for public vs. private enrollment ###
+
+# Dataframe for public enrollment only
 enroll_public <- enroll %>%
   select(year, public) %>% 
   rename(enrollment = public) %>% 
-  mutate(sector = 'public',
-         type = NA)
+  mutate(sector = 'public', # add a column for sector
+         type = NA) # add a column for type and fill with NAs (in the private dataframe, this will be filled with nonprofit vs forprofit, but this is not applicable to public institutions)
 
+# Dataframe for private enrollment only
 enroll_private <- enroll %>% 
-  select(year, nonprofit, forprofit) %>% 
-  gather(key = type, value = enrollment, 2:3) %>% 
-  mutate(sector = 'private')
+  select(year, nonprofit, forprofit) %>% # select only columns for private institutions, nonprofit vs forprofit (NOT totals)
+  gather(key = type, value = enrollment, 2:3) %>% # create new columns 'type' (filled with values from the names of columns 2-3) and 'enrollment' (filled with the data within those columns)
+  mutate(sector = 'private') # add a column for sector
 
+# Combine full-time and part-time dataframes together vertically
 enroll_sector <- rbind(enroll_public, enroll_private) %>% 
   select(year, sector, type, enrollment)
 
@@ -72,20 +82,19 @@ enroll_sector <- rbind(enroll_public, enroll_private) %>%
 
 ```{r scatter plots, echo=FALSE, warning=FALSE}
 
-# Scatter plot: totals
+# Scatter plot: Total male vs female enrollment over time
 total_scatter <- enrollment %>% 
   group_by(year, sex) %>% 
-  summarize(total = sum(enrollment)) %>% 
+  summarize(total = sum(enrollment))%>% 
   ggplot(aes(x = year, y = total)) +
     geom_point(aes(color = sex)) +
-    theme_classic() +
     labs(x = 'Year',
          y = 'Enrollment (number of students)',
          title = 'Total male vs. female enrollment (1967-2015)')
 
 total_scatter
 
-# Scatter plot: male vs female, fulltime vs parttime
+# Scatter plot: Enrollment over time by sex (male vs female), and enrollment status (fulltime vs parttime)
 enroll_scatter <- ggplot(enrollment, aes(x = year,
                                          y = enrollment/1000)) +
   geom_point(aes(color = sex, shape = status)) +
@@ -102,7 +111,7 @@ enroll_scatter <- ggplot(enrollment, aes(x = year,
   theme_classic()
 enroll_scatter
 
-# Scatter plot: public vs private
+# Scatter plot: Total public vs. private enrollment over time
 sector_scatter <- enroll_sector %>% 
   group_by(year, sector) %>% 
   summarize(total = sum(enrollment)) %>% 
@@ -124,7 +133,7 @@ sector_scatter
 # Linear regression for total male enrollment
 totals_m <- enrollment %>% 
   group_by(year, sex) %>% 
-  summarize(total = sum(enrollment)) %>% 
+  summarize(total = sum(enrollment)/1000) %>% 
   filter(sex == 'male')
 
 male_lm <- lm(total ~ year, data = totals_m)
@@ -148,7 +157,7 @@ On average, total male enrollment increased by 9069 students per year. Year was 
 # Linear regression for total female enrollment
 totals_f <- enrollment %>% 
   group_by(year, sex) %>% 
-  summarize(total = sum(enrollment)) %>% 
+  summarize(total = sum(enrollment)/1000) %>% 
   filter(sex == 'female')
 
 female_lm <- lm(total ~ year, data = totals_f)
@@ -169,7 +178,15 @@ On average, total female enrollment increased by 30,126 students per year. Year 
 
 ```{r linear regression: male vs female and full vs part, include=FALSE}
 
-### MALE - FULLTIME ###
+###### Linear regressions for four different groups:
+###### 1. Male, full-time
+###### 2. Male, part-time
+###### 3. Female, full-time
+###### 4. Female, part-time
+
+
+
+### 1. MALE - FULLTIME ###
 
 # Linear regression for male fulltime enrollment
 totals_m_f <- enrollment %>% 
@@ -191,29 +208,9 @@ plot(male_full_lm)
 male_full_pr <- cor.test(totals_m_f$year, totals_m_f$total)
 male_full_pr
 
-### FEMALE - FULLTIME ###
 
-# Linear regression for female fulltime enrollment
-totals_f_f <- enrollment %>% 
-  mutate(enrollment = enrollment/1000) %>% 
-  group_by(year, sex, status) %>% 
-  summarize(total = sum(enrollment)) %>% 
-  filter(sex == 'female',
-         status == 'fulltime')
 
-female_full_lm <- lm(total ~ year, data = totals_f_f)
-
-summary(female_full_lm)
-
-# Model diagnostics
-par(mfrow = c(2,2))
-plot(female_full_lm)
-
-# Pearson's r
-female_full_pr <- cor.test(totals_f_f$year, totals_f_f$total)
-female_full_pr
-
-### MALE - PARTTIME ###
+### 2. MALE - PARTTIME ###
 
 # Linear regression for male fulltime enrollment
 totals_m_p <- enrollment %>%
@@ -235,7 +232,33 @@ plot(male_part_lm)
 male_part_pr <- cor.test(totals_m_p$year, totals_m_p$total)
 male_part_pr
 
-### FEMALE - PARTTIME ###
+
+
+### 3. FEMALE - FULLTIME ###
+
+# Linear regression for female fulltime enrollment
+totals_f_f <- enrollment %>% 
+  mutate(enrollment = enrollment/1000) %>% 
+  group_by(year, sex, status) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  filter(sex == 'female',
+         status == 'fulltime')
+
+female_full_lm <- lm(total ~ year, data = totals_f_f)
+
+summary(female_full_lm)
+
+# Model diagnostics
+par(mfrow = c(2,2))
+plot(female_full_lm)
+
+# Pearson's r
+female_full_pr <- cor.test(totals_f_f$year, totals_f_f$total)
+female_full_pr
+
+
+
+### 4. FEMALE - PARTTIME ###
 
 # Linear regression for female fulltime enrollment
 totals_f_p <- enrollment %>% 
@@ -262,26 +285,22 @@ female_part_pr
 
 ```{r graph of lms, echo=FALSE}
 
-# Plot: linear regressions for male vs female, fulltime vs parttime
-enroll_lms <- ggplot(totals_m_f, aes(x = year, y = total/1000)) +
+# Plot: Linear regressions for enrollment over time by sex (male vs female), and enrollment status (fulltime vs parttime)
+enroll_lms <- ggplot(totals_m_f, aes(x = year, y = total)) +
   geom_smooth(method = 'lm',
-              color = 'blue', fill = 'blue',
-              show.legend = TRUE) +
+              color = 'blue', fill = 'blue') +
   geom_smooth(data = totals_m_p,
-              aes(x = year, y = total/1000),
+              aes(x = year, y = total),
               method = 'lm',
-              color = 'blue', fill = 'blue', linetype = 'dashed',
-              show.legend = TRUE) +
+              color = 'blue', fill = 'blue', linetype = 'dashed') +
   geom_smooth(data = totals_f_f,
-              aes(x = year, y = total/1000),
+              aes(x = year, y = total),
               method = 'lm',
-              color = 'orange', fill = 'orange',
-              show.legend = TRUE) +
+              color = 'orange', fill = 'orange') +
   geom_smooth(data = totals_f_p,
-              aes(x = year, y = total/1000),
+              aes(x = year, y = total),
               method = 'lm',
-              color = 'orange', fill = 'orange', linetype = 'dashed',
-              show.legend = TRUE) +
+              color = 'orange', fill = 'orange', linetype = 'dashed') +
   labs(x = 'Year',
        y = 'Enrollment (thousands of students)',
        title = 'Enrollment over time (1967-2015)') +
@@ -290,7 +309,7 @@ enroll_lms <- ggplot(totals_m_f, aes(x = year, y = total/1000)) +
 
 enroll_lms
 
-# Scatter plot
+# Scatter plot: Enrollment over time by sex (male vs female), and enrollment status (fulltime vs parttime)
 enroll_scatter <- ggplot(enrollment, aes(x = year,
                                          y = enrollment/1000)) +
   geom_point(aes(color = sex, shape = status)) +
@@ -308,7 +327,7 @@ enroll_scatter <- ggplot(enrollment, aes(x = year,
 
 enroll_scatter
 
-# Lines for legend
+# Lines for legend - IGNORE THIS, KATE DID SOMETHING FUNKY FOR THE FIGURE
 v1 <- c(1,2,3,4,5,6,7,8,9,10)
 v2 <- c(1,2,1,1,1,1,1,1,2,1)
 v3 <- c(2,3,2,2,2,2,2,2,3,2)
@@ -329,6 +348,79 @@ plot <- ggplot(df, aes(x = v1, v2)) +
               color = 'orange', fill = 'orange', linetype = 'dashed') +
   theme_classic()
 plot
+
+```
+
+
+```{r Fig 1}
+
+##### FINAL FIGURE #####
+
+# Scatter plot and linear regression for total enrollment over time (male vs female)
+total_fig <- enrollment %>% 
+  group_by(year, sex) %>% 
+  summarize(total = sum(enrollment)) %>% 
+  ggplot(aes(x = year, y = total/1000)) +
+    geom_point(aes(color = sex)) +
+    geom_smooth(data = totals_m,
+                aes(x = year, y = total/1000),
+                method = 'lm',
+                color = 'black', fill = 'grey40',
+                lwd = 0.5) +
+    geom_smooth(data = totals_f,
+                aes(x = year, y = total/1000),
+                method = 'lm',
+                color = 'black', fill = 'grey40',
+                lwd = 0.5) +
+    scale_color_manual(name = 'Sex',
+                       labels = c('Female', 'Male'),
+                       values = c('orange', 'blue')) +
+    labs(x = 'Year',
+         y = 'Enrollment (thousands of students)',
+         title = 'Enrollment over time (1967-2015)') +
+    scale_y_continuous(limits = c(0, 2000)) +
+    theme_classic()
+
+total_fig
+
+# Scatter plot and linear regression for total enrollment over time (male vs female, full-time vs. part-time)
+
+total_fig2 <- ggplot(enrollment, aes(x = year,
+                                         y = enrollment/1000)) +
+  geom_point(aes(color = sex, shape = status)) +
+  scale_shape_manual(values = c(19, 1),
+                     name = 'Enrollment Status',
+                     labels = c('Full-time', 'Part-time')) +
+  scale_color_manual(values = c('orange', 'blue'),
+                     name = 'Sex',
+                     labels = c('Female', 'Male')) +
+  labs(x = 'Year',
+       y = 'Enrollment (thousands of students)',
+       title = 'Enrollment over time (1967-2015)') +
+  scale_y_continuous(limits = c(0, 1000)) +
+  theme_classic() +
+  geom_smooth(data = totals_m_f,
+              aes(x = year, y = total),
+              method = 'lm',
+              color = 'black', fill = 'grey40',
+              lwd = 0.5) +
+  geom_smooth(data = totals_m_p,
+              aes(x = year, y = total),
+              method = 'lm',
+              color = 'black', fill = 'grey40',
+              lwd = 0.5) +
+  geom_smooth(data = totals_f_f,
+              aes(x = year, y = total),
+              method = 'lm',
+              color = 'black', fill = 'grey40',
+              lwd = 0.5) +
+  geom_smooth(data = totals_f_p,
+              aes(x = year, y = total),
+              method = 'lm',
+              color = 'black', fill = 'grey40',
+              lwd = 0.5)
+
+total_fig2
 
 ```
 
